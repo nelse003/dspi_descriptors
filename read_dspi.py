@@ -1,6 +1,7 @@
 import pandas as pd
 from rdkit.Chem import Descriptors
 import rdkit.Chem as Chem
+import matplotlib.pyplot as plt
 
 def Nrot(row):
     """ Get number of rotatble bonds
@@ -147,16 +148,63 @@ def Fsp3(row):
     FSP3 = Descriptors.FractionCSP3(m)
     return FSP3
 
+def add_properties_to_df(df):
 
-DSPI_df = pd.read_excel('DSPI.xlsx')
+    """ Add predicted properties to DataFrame with SMILES
 
-DSPI_df['N_rot'] = DSPI_df.apply(Nrot, axis=1)
-DSPI_df['HAC'] = DSPI_df.apply(heavy_atoms, axis=1)
-DSPI_df['cLogP'] = DSPI_df.apply(clogP, axis =1)
-DSPI_df['TSPA'] = DSPI_df.apply(TPSA, axis=1)
-DSPI_df['NDon'] = DSPI_df.apply(NDon, axis=1)
-DSPI_df['NAcc'] = DSPI_df.apply(NAcc, axis=1)
-DSPI_df['Fsp3'] = DSPI_df.apply(Fsp3, axis=1)
+    Adds new column for each of:
 
-print(DSPI_df.mean())
-print(DSPI_df.SMILES.nunique())
+    N_rot: Number of rotatable bonds
+    HAC: Heavy atom count
+    cLogP: Calculated log partition coefficent
+    TSPA: Total polar surface area
+    NDON: number of Hbond donors
+    NAcc: Number of Hbond Acceptors
+    Fsp3: Fraction of sp3 carbons
+    """
+
+    df['N_rot'] = df.apply(Nrot, axis=1)
+    df['HAC'] = df.apply(heavy_atoms, axis=1)
+    df['cLogP'] = df.apply(clogP, axis =1)
+    df['TSPA'] = df.apply(TPSA, axis=1)
+    df['NDon'] = df.apply(NDon, axis=1)
+    df['NAcc'] = df.apply(NAcc, axis=1)
+    df['Fsp3'] = df.apply(Fsp3, axis=1)
+
+    return df
+
+def plot_histograms(df, library_name):
+
+    properties = ['N_rot', 'HAC', 'cLogP', 'TSPA', 'NDon', 'NAcc', 'Fsp3']
+
+    for prop in properties:
+        df.plot(y=prop, kind='hist', bins=40)
+        plt.xlabel('{}'.format(prop))
+        plt.title('{}'.format(library_name))
+        plt.savefig('{}_{}.png'.format(prop, library_name), dpi=300)
+
+
+if __name__ == '__main__':
+
+    dspi_df = pd.read_excel('DSPI.xlsx')
+    dspi_df = add_properties_to_df(dspi_df)
+
+    print("DPSI")
+    print(dspi_df.mean())
+    print(dspi_df.SMILES.nunique())
+    print("_-------------------------")
+
+    plot_histograms(dspi_df,"DSPI")
+    dspi_df.to_excel("DSPI_with_properties.xlsx")
+
+    minifrag_df = pd.read_excel('MiniFrag.xlsx')
+    minifrag_df = add_properties_to_df(minifrag_df)
+
+    print("MiniFrag")
+    print(minifrag_df.mean())
+    print(minifrag_df.SMILES.nunique())
+    print("_-------------------------")
+
+    plot_histograms(minifrag_df,"MiniFrag")
+    minifrag_df.to_excel("minifrag_with_properties.xlsx")
+
