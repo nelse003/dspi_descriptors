@@ -1,7 +1,9 @@
+import os
 import pandas as pd
 from rdkit.Chem import Descriptors
 import rdkit.Chem as Chem
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 def Nrot(row):
     """ Get number of rotatble bonds
@@ -181,13 +183,44 @@ def plot_histograms(df, library_name):
         df.plot(y=prop, kind='hist', bins=40)
         plt.xlabel('{}'.format(prop))
         plt.title('{}'.format(library_name))
-        plt.savefig('{}_{}.png'.format(prop, library_name), dpi=300)
+        plt.savefig('Output/{}_{}.png'.format(prop, library_name), dpi=300)
+        plt.close()
 
+def plot_multiple_libraries(df_dict):
+
+    properties = ['N_rot', 'HAC', 'cLogP', 'TSPA', 'NDon', 'NAcc', 'Fsp3']
+
+    for prop in properties:
+        f, axes = plt.subplots(3, 1, figsize=(7, 7), sharex=True)
+        sns.distplot(df_dict['FragLite'][prop], kde=False, ax=axes[0],label='FragLite')
+        axes[0].set_title('FragLite')
+        sns.distplot(df_dict['DSiP'][prop], kde=False, ax=axes[1], label='DSiP')
+        axes[1].set_title('DSiP')
+        sns.distplot(df_dict['Minifrag'][prop], kde=False, ax=axes[2], label='MiniFrag')
+        axes[2].set_title('MiniFrag')
+        plt.subplots_adjust(hspace=0.3)
+
+        plt.xlabel('{}'.format(prop))
+        plt.savefig('Output/{}_all.png'.format(prop), dpi=300)
+        plt.close()
 
 if __name__ == '__main__':
 
     dspi_df = pd.read_excel('DSPI.xlsx')
     dspi_df = add_properties_to_df(dspi_df)
+
+    fraglite_df = pd.read_excel('ECHO_FragLiteSET1_EG.xlsx')
+    fraglite_df = add_properties_to_df(fraglite_df)
+
+    minifrag_df = pd.read_excel('MiniFrag.xlsx')
+    minifrag_df = add_properties_to_df(minifrag_df)
+
+    os.mkdir("Output")
+
+    df_dict = {"DSiP":dspi_df,
+               "FragLite":fraglite_df,
+               "Minifrag":minifrag_df}
+    plot_multiple_libraries(df_dict)
 
     print("DPSI")
     print(dspi_df.mean())
@@ -195,10 +228,7 @@ if __name__ == '__main__':
     print("_-------------------------")
 
     plot_histograms(dspi_df,"DSPI")
-    dspi_df.to_excel("DSPI_with_properties.xlsx")
-
-    minifrag_df = pd.read_excel('MiniFrag.xlsx')
-    minifrag_df = add_properties_to_df(minifrag_df)
+    dspi_df.to_excel("Output/DSPI_with_properties.xlsx")
 
     print("MiniFrag")
     print(minifrag_df.mean())
@@ -206,5 +236,7 @@ if __name__ == '__main__':
     print("_-------------------------")
 
     plot_histograms(minifrag_df,"MiniFrag")
-    minifrag_df.to_excel("minifrag_with_properties.xlsx")
+
+    print(minifrag_df)
+    minifrag_df.to_excel("Output/minifrag_with_properties.xlsx")
 
